@@ -14,7 +14,7 @@ from agents.memory.checkpoint import postgres_checkpointer
 from agents.service import AgentService
 from agents.tools.legal_tools import search_cases
 from api.middleware.tracing import setup_observability
-from api.routes import checkpoints, chat, sessions, tools
+from api.routes import a2a, checkpoints, chat, sessions, tools
 
 logger = structlog.get_logger("api.app")
 
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions.router)
     app.include_router(checkpoints.router)
     app.include_router(tools.router)
+    app.include_router(a2a.router)
 
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:

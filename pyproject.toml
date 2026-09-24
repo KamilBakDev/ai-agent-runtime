@@ -1,0 +1,33 @@
+[project]
+name = "ai-agent-runtime"
+version = "0.1.0"
+description = "Production-grade multi-agent AI runtime: LangGraph orchestration, checkpoints, HITL, MCP, A2A, RAG."
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["db/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# E501: line length (handled by formatting, not worth failing CI over)
+# B008: FastAPI's Depends()-as-default-argument is the idiomatic pattern, not a bug
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_unused_ignores = true
+exclude = ["db/migrations", "tests", "notebooks"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["agents", "api", "rag"]
+omit = ["*/migrations/*"]

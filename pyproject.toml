@@ -12,7 +12,9 @@ exclude = ["db/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
+# E501: line length (handled by formatting, not worth failing CI over)
+# B008: FastAPI's Depends()-as-default-argument is the idiomatic pattern, not a bug
+ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.11"

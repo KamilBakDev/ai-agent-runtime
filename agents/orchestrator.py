@@ -19,8 +19,8 @@ from langgraph.graph.message import add_messages
 
 from agents.llm import get_chat_model
 from agents.subagents.coder import make_coder_node
-from agents.subagents.reviewer import reviewer_node, route_after_review
 from agents.subagents.researcher import RetrieveFn, make_researcher_node
+from agents.subagents.reviewer import reviewer_node, route_after_review
 
 
 class AgentState(TypedDict):
@@ -43,10 +43,13 @@ def build_graph(
     """Construct the (uncompiled) orchestrator graph."""
     llm = llm or get_chat_model()
 
+    # Node functions take/return plain dicts (partial-state updates) rather than the
+    # AgentState TypedDict itself, which doesn't fully satisfy StateGraph.add_node's
+    # generic bound -- this is a common friction point with dict-style LangGraph nodes.
     graph: StateGraph = StateGraph(AgentState)
-    graph.add_node("researcher", make_researcher_node(llm, retrieve))
-    graph.add_node("coder", make_coder_node(llm))
-    graph.add_node("reviewer", reviewer_node)
+    graph.add_node("researcher", make_researcher_node(llm, retrieve))  # type: ignore[call-overload]
+    graph.add_node("coder", make_coder_node(llm))  # type: ignore[call-overload]
+    graph.add_node("reviewer", reviewer_node)  # type: ignore[type-var]
 
     graph.add_edge(START, "researcher")
     graph.add_edge("researcher", "coder")

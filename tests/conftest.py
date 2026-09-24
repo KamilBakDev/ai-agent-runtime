@@ -37,8 +37,7 @@ async def api_client():
     from api.app import app
 
     transport = httpx.ASGITransport(app=app)
-    async with app.router.lifespan_context(app):
-        async with httpx.AsyncClient(
-            transport=transport, base_url="http://test", timeout=30
-        ) as client:
-            yield client
+    async with app.router.lifespan_context(app), httpx.AsyncClient(
+        transport=transport, base_url="http://test", timeout=30
+    ) as client:
+        yield client

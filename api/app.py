@@ -15,7 +15,7 @@ from agents.observability import metrics
 from agents.service import AgentService
 from agents.tools.legal_tools import search_cases
 from api.middleware.tracing import setup_observability
-from api.routes import a2a, checkpoints, chat, sessions, tools
+from api.routes import a2a, chat, checkpoints, sessions, tools
 
 logger = structlog.get_logger("api.app")
 

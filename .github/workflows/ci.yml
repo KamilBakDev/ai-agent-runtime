@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  LLM_PROVIDER: fake
+  EMBEDDINGS_PROVIDER: fake
+  DATABASE_URL: postgresql+asyncpg://agent_runtime:agent_runtime@localhost:5432/agent_runtime
+  CHECKPOINT_DATABASE_URL: postgresql://agent_runtime:agent_runtime@localhost:5432/agent_runtime
+  QDRANT_URL: http://localhost:6333
+  REDIS_URL: redis://localhost:6379/0
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agent_runtime
+          POSTGRES_USER: agent_runtime
+          POSTGRES_PASSWORD: agent_runtime
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agent_runtime"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create venv and install dependencies
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install -r requirements.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Wait for Qdrant
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:6333/collections && exit 0
+            sleep 1
+          done
+          echo "Qdrant did not become ready in time" >&2
+          exit 1
+
+      - name: Run database migrations
+        run: alembic upgrade head
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Type check (mypy)
+        run: mypy agents api rag db
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=agents --cov=api --cov=rag \
+            --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
+
+  docker-build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

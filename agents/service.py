@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

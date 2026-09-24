@@ -34,11 +34,11 @@ class ScriptedFakeChatModel(GenericFakeChatModel):
                         return value
         return "Mocked response."
 
-    def invoke(self, input: Any, config: Any = None, **kwargs: Any) -> AIMessage:  # type: ignore[override]
+    def invoke(self, input: Any, config: Any = None, **kwargs: Any) -> AIMessage:
         messages = input if isinstance(input, list) else getattr(input, "messages", [input])
         return AIMessage(content=self._next_response(messages))
 
-    async def ainvoke(self, input: Any, config: Any = None, **kwargs: Any) -> AIMessage:  # type: ignore[override]
+    async def ainvoke(self, input: Any, config: Any = None, **kwargs: Any) -> AIMessage:
         return self.invoke(input, config, **kwargs)
 
 
@@ -63,12 +63,13 @@ def get_chat_model(settings: Settings | None = None, **overrides: Any) -> BaseCh
 
     if provider == "openai":
         from langchain_openai import ChatOpenAI
+        from pydantic import SecretStr
 
         if not settings.openai_api_key:
             raise RuntimeError("LLM_PROVIDER=openai requires OPENAI_API_KEY to be set")
         return ChatOpenAI(
             model=settings.llm_model or "gpt-4o-mini",
-            api_key=settings.openai_api_key,
+            api_key=SecretStr(settings.openai_api_key),
             **overrides,
         )
 

@@ -25,8 +25,11 @@ def make_researcher_node(
     """Build the researcher graph node, bound to a given chat model and retriever."""
 
     async def researcher_node(state: dict[str, Any]) -> dict[str, Any]:
-        last_user = next(
-            (m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), ""
+        last_user = str(
+            next(
+                (m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage)),
+                "",
+            )
         )
 
         citations: list[dict[str, Any]] = []

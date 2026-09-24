@@ -99,6 +99,20 @@ async def test_resume_reject_reopens_pending_action(api_client):
 
 
 @pytest.mark.asyncio
+async def test_resume_edited_uses_edited_output_as_final(api_client):
+    session_id = await _run_chat_to_pending(api_client, "Draft SQL for contracts.")
+
+    r = await api_client.post(
+        f"/sessions/{session_id}/resume",
+        json={"review_status": "edited", "edited_output": "SELECT * FROM contracts;"},
+    )
+    assert r.status_code == 200
+    result = r.json()
+    assert result["status"] == "completed"
+    assert result["final_output"] == "SELECT * FROM contracts;"
+
+
+@pytest.mark.asyncio
 async def test_checkpoints_list_and_restore(api_client):
     session_id = await _run_chat_to_pending(api_client, "Draft SQL for contracts.")
     await api_client.post(f"/sessions/{session_id}/resume", json={"review_status": "approved"})

@@ -8,6 +8,8 @@ from typing import Any
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
+from agents.observability import extract_usage, metrics
+
 CODER_SYSTEM_PROMPT = (
     "You are the Coder agent in a multi-agent workflow. Given research notes, write the "
     "minimal, correct Python or SQL needed to satisfy the request. If given reviewer "
@@ -34,6 +36,8 @@ def make_coder_node(llm: BaseChatModel) -> Callable[[dict[str, Any]], Awaitable[
         ]
         response = await llm.ainvoke(prompt)
         draft = response.content if isinstance(response, AIMessage) else str(response)
+        prompt_tokens, completion_tokens = extract_usage(response)
+        metrics.record_llm_usage("coder", prompt_tokens, completion_tokens)
 
         return {
             "messages": [AIMessage(content=draft, name="coder")],

@@ -8,6 +8,8 @@ from typing import Any
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
+from agents.observability import extract_usage, metrics
+
 RESEARCHER_SYSTEM_PROMPT = (
     "You are the Researcher agent in a multi-agent legal/technical workflow. "
     "Read the user's request, use any retrieved context provided, and produce a concise, "
@@ -47,6 +49,8 @@ def make_researcher_node(
         ]
         response = await llm.ainvoke(prompt)
         notes = response.content if isinstance(response, AIMessage) else str(response)
+        prompt_tokens, completion_tokens = extract_usage(response)
+        metrics.record_llm_usage("researcher", prompt_tokens, completion_tokens)
 
         return {
             "messages": [AIMessage(content=notes, name="researcher")],

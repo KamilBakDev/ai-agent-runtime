@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agents.config import get_settings
 from agents.memory.checkpoint import postgres_checkpointer
+from agents.observability import metrics
 from agents.service import AgentService
 from agents.tools.legal_tools import search_cases
 from api.middleware.tracing import setup_observability
@@ -59,6 +60,10 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/metrics", tags=["health"])
+    async def metrics_snapshot() -> dict:
+        return metrics.snapshot()
 
     return app
 

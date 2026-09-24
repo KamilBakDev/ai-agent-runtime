@@ -19,6 +19,20 @@ async def test_health(api_client):
 
 
 @pytest.mark.asyncio
+async def test_metrics_reports_latency_after_requests(api_client):
+    await api_client.get("/health")
+    await api_client.get("/health")
+
+    r = await api_client.get("/metrics")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["request_count"] >= 2
+    assert body["latency_p50_ms"] is not None
+    assert body["latency_p95_ms"] is not None
+    assert "token_usage_by_node" in body
+
+
+@pytest.mark.asyncio
 async def test_create_and_list_sessions(api_client):
     r = await api_client.post("/sessions", json={"title": "pytest session"})
     assert r.status_code == 200

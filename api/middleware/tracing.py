@@ -26,6 +26,7 @@ from opentelemetry.sdk.trace.export import (
 )
 
 from agents.config import get_settings
+from agents.observability import metrics
 
 _configured = False
 
@@ -101,6 +102,7 @@ def setup_observability(app: FastAPI) -> None:
                 )
                 raise
             duration_ms = (time.perf_counter() - start) * 1000
+            metrics.record_latency(duration_ms)
             span.set_attribute("http.status_code", response.status_code)
             response.headers["x-request-id"] = request_id
             logger.info(

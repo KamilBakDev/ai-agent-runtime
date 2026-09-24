@@ -119,6 +119,33 @@ class AgentService:
         await self.graph.ainvoke(state, config)
         return await self._after_step(db, session_id, before_count=0)
 
+    async def run_turn_stream(self, db: AsyncSession, session_id: str, user_message: str):
+        """Stream node-level progress events, then yield a final summary event.
+
+        Each node update is streamed as it completes (LangGraph ``stream_mode="updates"``),
+        which is what backs the SSE ``/chat`` endpoint.
+        """
+        config = _thread_config(session_id)
+        state = initial_state(session_id, user_message)
+        async for event in self.graph.astream(state, config, stream_mode="updates"):
+            for node_name, update in event.items():
+                if node_name == "__interrupt__":
+                    yield {"type": "node_update", "node": "reviewer", "current_step": "awaiting_review"}
+                    continue
+                yield {
+                    "type": "node_update",
+                    "node": node_name,
+                    "current_step": update.get("current_step"),
+                }
+        result = await self._after_step(db, session_id, before_count=0)
+        yield {
+            "type": "turn_complete",
+            "status": result.status,
+            "final_output": result.final_output,
+            "pending_action_id": result.pending_action_id,
+            "new_messages": result.new_messages,
+        }
+
     async def resume_turn(
         self, db: AsyncSession, session_id: str, decision: dict[str, Any]
     ) -> TurnResult:
@@ -169,9 +196,21 @@ class AgentService:
         return history
 
     async def restore_checkpoint(self, session_id: str, checkpoint_id: str) -> dict[str, Any]:
-        """Time-travel: make ``checkpoint_id`` the thread's latest state (non-destructively)."""
+        """Time-travel: make ``checkpoint_id`` the thread's latest state (non-destructively).
+
+        Re-applying an empty update forks the thread's history forward from that
+        checkpoint, without altering any of the checkpoints already recorded. LangGraph
+        needs to know which node the (no-op) write is attributed to for any checkpoint
+        that has more than one predecessor task; we recover that from the checkpoint's
+        own metadata. The very first (pre-run) checkpoint has no writer node at all, so
+        there is nothing to fork there -- it's already the thread's root.
+        """
         config = _thread_config(session_id, checkpoint_id)
-        await self.graph.aupdate_state(config, {})
+        snapshot = await self.graph.aget_state(config)
+        writes = (snapshot.metadata or {}).get("writes") or {}
+        if writes:
+            as_node = next(iter(writes.keys()))
+            await self.graph.aupdate_state(config, {}, as_node=as_node)
         return await self.get_state(session_id)
 
     async def branch_from_checkpoint(

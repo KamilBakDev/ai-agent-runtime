@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from agents.tools.legal_tools import extract_citations, search_cases
 from agents.tools.sql_tool import UnsafeQueryError, query_sql
 from db.database import get_db
 
@@ -47,3 +48,22 @@ async def invoke_query_sql(
         return await query_sql(db, payload.statement, payload.limit)
     except UnsafeQueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+class SearchCasesRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+
+@router.post("/search_cases")
+async def invoke_search_cases(payload: SearchCasesRequest) -> list[dict[str, Any]]:
+    return await search_cases(payload.query, payload.top_k)
+
+
+class ExtractCitationsRequest(BaseModel):
+    doc_ids: list[str]
+
+
+@router.post("/extract_citations")
+async def invoke_extract_citations(payload: ExtractCitationsRequest) -> list[dict[str, Any]]:
+    return await extract_citations(payload.doc_ids)

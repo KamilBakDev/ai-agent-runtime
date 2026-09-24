@@ -1,0 +1,32 @@
+[
+  {
+    "question": "What must a party do to invoke force majeure relief under a commercial lease?",
+    "expected_source": "force_majeure_lease_cases.md",
+    "expected_keywords": ["notice", "written"]
+  },
+  {
+    "question": "Does a force majeure clause automatically cover ordinary supply-chain delays?",
+    "expected_source": "force_majeure_lease_cases.md",
+    "expected_keywords": ["narrow"]
+  },
+  {
+    "question": "What is the difference between a duty to defend and a duty to indemnify?",
+    "expected_source": "indemnification_clause_memo.md",
+    "expected_keywords": ["defend", "indemnify"]
+  },
+  {
+    "question": "How long must a force majeure event continue before either party may terminate the lease?",
+    "expected_source": "termination_rights_summary.md",
+    "expected_keywords": ["180", "terminate"]
+  },
+  {
+    "question": "What liability cap commonly applies in an indemnification clause?",
+    "expected_source": "indemnification_clause_memo.md",
+    "expected_keywords": ["cap", "fees"]
+  },
+  {
+    "question": "What is the cure period for a monetary breach before termination for cause?",
+    "expected_source": "termination_rights_summary.md",
+    "expected_keywords": ["cure", "10 days"]
+  }
+]

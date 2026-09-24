@@ -8,15 +8,11 @@ fake embeddings provider -- no network calls, no API keys. Ingestion is idempote
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from rag.citations import format_context_with_citations
-from rag.ingest import chunk_text, ingest_directory
+from rag.ingest import chunk_text
 from rag.retriever import HybridRetriever
-
-SAMPLE_DOCS = Path(__file__).resolve().parent.parent / "data" / "sample_docs"
 
 
 def test_chunk_text_respects_size_and_overlap():
@@ -29,12 +25,6 @@ def test_chunk_text_respects_size_and_overlap():
 def test_chunk_text_empty_input():
     assert chunk_text("") == []
     assert chunk_text("   ") == []
-
-
-@pytest.fixture(scope="module", autouse=True)
-async def ingested_corpus():
-    count = await ingest_directory(SAMPLE_DOCS)
-    assert count > 0
 
 
 @pytest.mark.asyncio

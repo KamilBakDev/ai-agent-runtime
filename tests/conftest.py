@@ -13,8 +13,25 @@ import os
 os.environ.setdefault("LLM_PROVIDER", "fake")
 os.environ.setdefault("EMBEDDINGS_PROVIDER", "fake")
 
+from pathlib import Path
+
 import httpx
 import pytest_asyncio
+
+SAMPLE_DOCS = Path(__file__).resolve().parent.parent / "data" / "sample_docs"
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def ingested_corpus():
+    """Ingest the sample corpus into Qdrant once before any test runs.
+
+    Session-scoped and autouse so it's not an implicit ordering dependency on
+    whichever test module happens to run first (ingestion is idempotent, so
+    re-running it locally against an already-populated collection is a no-op).
+    """
+    from rag.ingest import ingest_directory
+
+    await ingest_directory(SAMPLE_DOCS)
 
 
 @pytest_asyncio.fixture

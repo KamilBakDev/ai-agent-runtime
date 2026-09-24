@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+# `streamlit run ui/app.py` only puts ui/ on sys.path, not the repo root, so the
+# `ui.components.*` package imports below would otherwise fail with ModuleNotFoundError.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import requests
 import streamlit as st
